@@ -1,4 +1,4 @@
-package com.robocore.qleaptemi
+package com.robocore.qleaptemi.ui.settings
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -7,10 +7,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(): ViewModel() {
+class SettingsViewModel @Inject constructor(): ViewModel() {
     @Inject lateinit var mqttConnection: MqttConnection
     fun test() {
-        Log.d("MainViewModel", "yo")
-        Log.d("MainViewModel", mqttConnection.toString())
+        Log.d(TAG, mqttConnection.toString())
+    }
+
+    companion object {
+        private const val TAG = "SettingsViewModel"
     }
 }

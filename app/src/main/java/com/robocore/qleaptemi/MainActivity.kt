@@ -7,12 +7,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
@@ -23,11 +19,12 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @Inject lateinit var mqttConnection: MqttConnection
-    private val mainViewModel: MainViewModel by viewModels()
+    @Inject
+    lateinit var mqttConnection: MqttConnection
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             QLeapTemiTheme {
                 // A surface container using the 'background' color from the theme
@@ -59,7 +56,6 @@ class MainActivity : ComponentActivity() {
         Log.d("MainActivity", "onAllPermissionsGranted")
         mqttConnection.isConnected()
         Log.d("MainActivity", mqttConnection.toString())
-        mainViewModel.test()
     }
 
     override fun onRequestPermissionsResult(
@@ -96,24 +92,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun QLeapApp() {
-    QLeapTemiTheme() {
-        val navController = rememberNavController()
+    val navController = rememberNavController()
 
-        Scaffold(
-
-        ) { innerPadding ->
-            AppNavigation(
-                navController = navController,
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    QLeapTemiTheme {
-
-    }
+//    Scaffold(
+//
+//    ) { innerPadding ->
+        AppNavigation(
+            navController = navController,
+//            modifier = Modifier.padding(innerPadding),
+        modifier = Modifier,
+        )
+//    }
 }
