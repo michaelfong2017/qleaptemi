@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            QLeapTemiTheme {
+            QLeapTemiTheme(darkTheme = true) {
                 // A surface container using the 'background' color from the theme
                 QLeapApp()
             }
@@ -100,7 +100,7 @@ fun QLeapApp() {
         AppNavigation(
             navController = navController,
 //            modifier = Modifier.padding(innerPadding),
-        modifier = Modifier,
+            modifier = Modifier,
         )
 //    }
 }
