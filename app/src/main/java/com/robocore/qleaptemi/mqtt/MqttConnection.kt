@@ -3,28 +3,53 @@ package com.robocore.qleaptemi.mqtt
 import android.content.Context
 import android.util.Log
 import com.robocore.qleaptemi.inject.MqttCoroutineScope
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
 
+/** Remember to add
+ * # Automatically convert third-party libraries to use AndroidX
+ * android.enableJetifier=true
+ * to gradle.properties
+ *
+ * Remember to add
+ * <service android:name="org.eclipse.paho.android.service.MqttService" />
+ * to AndroidManifest.xml under application
+ */
 class MqttConnection(private val context: Context) {
-    @MqttCoroutineScope
-    private lateinit var externalScope: CoroutineScope
+    /** Needed for field injection for a custom class
+     * e.g. hiltEntryPoint.externalScope() provides the desired externalScope.
+     */
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface MqttConnectionEntryPoint {
+        @MqttCoroutineScope
+        fun externalScope(): CoroutineScope
+    }
+
+    private val hiltEntryPoint =
+        EntryPointAccessors.fromApplication(context, MqttConnectionEntryPoint::class.java)
+    /** Needed for field injection for a custom class END */
 
     /** The clientId of the client associated with this `Connection` object  */
     private var clientId: String? = null
 
     /** [ConnectionStatus] of the [MqttAndroidClient] represented by this `Connection` object. Default value is [ConnectionStatus.NONE]  */
-    private var status = ConnectionStatus.NONE
+    private val _status: MutableStateFlow<ConnectionStatus> = MutableStateFlow(
+        ConnectionStatus.NONE
+    )
+    val status = _status.asStateFlow()
     fun setStatus(status: ConnectionStatus) {
-        this.status = status
+        _status.value = status
     }
-
-    fun getStatus(): ConnectionStatus {
-        return this.status
-    }
+    /***/
 
     /** The [MqttAndroidClient] instance this class represents  */
     private var client: MqttAndroidClient? = null
@@ -78,11 +103,14 @@ class MqttConnection(private val context: Context) {
      */
     fun isConnected(): Boolean {
         Log.d(TAG, context.toString())
-        return status == ConnectionStatus.CONNECTED
+        return status.value == ConnectionStatus.CONNECTED
     }
 
     fun connect() {
-        CoroutineScope(Dispatchers.Default).launch {
+        val externalScope = hiltEntryPoint.externalScope()
+        Log.d(TAG, externalScope.toString())
+
+        externalScope.launch {
             try {
                 if (client?.isConnected == false) {
                     Log.d(TAG, "MqttClient - connect - mqttClient?.isConnected == false")
@@ -90,7 +118,7 @@ class MqttConnection(private val context: Context) {
                         override fun onSuccess(asyncActionToken: IMqttToken?) {
                             Log.d(TAG, "MqttClient - Connected")
 
-                            status = ConnectionStatus.CONNECTED
+                            setStatus(ConnectionStatus.CONNECTED)
                         }
 
                         override fun onFailure(
@@ -99,7 +127,7 @@ class MqttConnection(private val context: Context) {
                         ) {
                             Log.d(TAG, "MqttClient - Failed to connect - $exception")
 
-                            status = ConnectionStatus.ERROR
+                            setStatus(ConnectionStatus.ERROR)
                         }
                     })
                 }

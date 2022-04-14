@@ -1,29 +1,47 @@
 package com.robocore.qleaptemi.ui.home
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.robocore.qleaptemi.BaseViewModel
+import com.robocore.qleaptemi.UiEffect
+import com.robocore.qleaptemi.UiEvent
+import com.robocore.qleaptemi.UiState
+import com.robocore.qleaptemi.inject.MqttCoroutineScope
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(): ViewModel() {
-    @Inject lateinit var mqttConnection: MqttConnection
+class HomeViewModel @Inject constructor(
+    private val mqttConnection: MqttConnection,
+    @MqttCoroutineScope private val externalScope: CoroutineScope
+) :
+    BaseViewModel<HomeViewModel.State, HomeViewModel.Event, HomeViewModel.Effect>() {
 
-    private val _viewState: MutableStateFlow<ViewState> = MutableStateFlow(ViewState())
-    val viewState = _viewState.asStateFlow()
-
-    fun test() {
-        Log.d(TAG, mqttConnection.toString())
+    init {
+        viewModelScope.launch {
+            mqttConnection.status.collect {
+                setState { copy(mqttConnectionStatus = it) }
+            }
+        }
     }
 
-    fun onAction(uiAction: UiAction) {
-        when (uiAction) {
-            is UiAction.StartOrStopQLeap -> {
+    override fun createInitialState(): State {
+        return State()
+    }
+
+    override fun handleEvent(event: Event) {
+        when (event) {
+            is Event.ConnectMqttTest -> {
+                viewModelScope.launch {
+                    mqttConnection.connect()
+                    Log.d(TAG, externalScope.toString())
+                }
+            }
+            is Event.StartOrStopQLeap -> {
 //                coroutineScope.launch {
 //                    _viewState.value = _viewState.value.copy(isLoading = true)
 //                    withContext(Dispatchers.IO) { answerService.save(uiAction.answer) }
@@ -36,32 +54,33 @@ class HomeViewModel @Inject constructor(): ViewModel() {
 //                    _oneShotEvents.send(OneShotEvent.NavigateToResults)
 //                    _viewState.value = _viewState.value.copy(isLoading = false)
 //                }
-                viewModelScope.launch {
-                    mqttConnection.connect()
-                    Log.d(TAG, mqttConnection.getStatus().toString())
-                }
             }
-            is UiAction.OpenOrCloseSettings -> {
+            is Event.OpenOrCloseSettings -> {
 
             }
-            is UiAction.OpenOrCloseAdminSettings -> {
+            is Event.OpenOrCloseAdminSettings -> {
 
             }
         }
     }
 
-    data class ViewState(
+    // Ui View States
+    data class State(
         val mqttConnectionStatus: MqttConnection.ConnectionStatus = MqttConnection.ConnectionStatus.NONE,
-    )
+    ) : UiState
 
-//    sealed class OneShotEvent {
-//        object NavigateToResults : OneShotEvent()
-//    }
+    // Events that user performed
+    sealed class Event : UiEvent {
+        object ConnectMqttTest : Event()
+        object StartOrStopQLeap : Event()
+        object OpenOrCloseSettings : Event()
+        object OpenOrCloseAdminSettings : Event()
+    }
 
-    sealed class UiAction {
-        object StartOrStopQLeap : UiAction()
-        object OpenOrCloseSettings : UiAction()
-        object OpenOrCloseAdminSettings : UiAction()
+    // Side effects
+    sealed class Effect : UiEffect {
+        object ShowToast : Effect()
+
     }
 
     companion object {

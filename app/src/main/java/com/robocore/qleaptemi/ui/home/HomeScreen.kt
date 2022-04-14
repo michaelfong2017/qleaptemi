@@ -25,10 +25,10 @@ import com.robocore.qleaptemi.ui.theme.QLeapTemiTheme
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
     Log.d("ViewModelObject", "HomeScreen: $viewModel")
 
-    val viewState = viewModel.viewState.collectAsState()
+    val uiState = viewModel.uiState.collectAsState()
 
     _HomeScreen(
-        viewState.value,
+        uiState.value,
         {
             navController.navigate(MainScreen.Settings.route) {
                 popUpTo(navController.graph.findStartDestination().id) {
@@ -36,15 +36,15 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 }
             }
         },
-        { viewModel.onAction(HomeViewModel.UiAction.StartOrStopQLeap) }
+        { viewModel.setEvent(HomeViewModel.Event.ConnectMqttTest) }
     )
 }
 
 @Composable
 fun _HomeScreen(
-    viewState: HomeViewModel.ViewState,
+    uiState: HomeViewModel.State,
     navigateTo: () -> Unit,
-    onActionStartOrStopQLeap: () -> Unit
+    onEventConnectMqttTest: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -67,7 +67,7 @@ fun _HomeScreen(
                 modifier = Modifier.padding(4.dp)
             )
             Text(
-                when (viewState.mqttConnectionStatus) {
+                when (uiState.mqttConnectionStatus) {
                     MqttConnection.ConnectionStatus.CONNECTED -> "伺服器連接: 已連接"
                     MqttConnection.ConnectionStatus.DISCONNECTED -> "伺服器連接: 已斷開"
                     MqttConnection.ConnectionStatus.CONNECTING -> "CONNECTING"
@@ -85,8 +85,8 @@ fun _HomeScreen(
                 Text(text = "home")
             }
 
-            Button(onClick = onActionStartOrStopQLeap ) {
-                Text(text = "connect mqtt")
+            Button(onClick = onEventConnectMqttTest ) {
+                Text(text = "connect mqtt test")
             }
 
         }
@@ -250,7 +250,7 @@ fun _HomeScreen(
 fun DefaultPreview() {
     QLeapTemiTheme(darkTheme = true) {
         Box {
-            _HomeScreen(HomeViewModel.ViewState(), {}, {})
+            _HomeScreen(HomeViewModel.State(), {}, {})
         }
     }
 }
