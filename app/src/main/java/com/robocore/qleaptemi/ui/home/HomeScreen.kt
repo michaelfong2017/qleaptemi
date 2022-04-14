@@ -1,15 +1,18 @@
 package com.robocore.qleaptemi.ui.home
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,6 +23,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.robocore.qleaptemi.MainScreen
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import com.robocore.qleaptemi.ui.theme.QLeapTemiTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
@@ -28,24 +34,42 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
     val uiState = viewModel.uiState.collectAsState()
 
     _HomeScreen(
-        uiState.value,
-        {
+        navigateTo = {
             navController.navigate(MainScreen.Settings.route) {
                 popUpTo(navController.graph.findStartDestination().id) {
 
                 }
             }
         },
-        { viewModel.setEvent(HomeViewModel.Event.ConnectMqttTest) }
+        uiState = uiState.value,
+        setEvent = { viewModel.setEvent(HomeViewModel.Event.ConnectMqttTest) },
+        effect = viewModel.effect,
+        setEffect = { viewModel.setEffect { HomeViewModel.Effect.ShowToastTest } },
     )
 }
 
 @Composable
 fun _HomeScreen(
-    uiState: HomeViewModel.State,
-    navigateTo: () -> Unit,
-    onEventConnectMqttTest: () -> Unit
+    navigateTo: () -> Unit = {},
+    uiState: HomeViewModel.State = HomeViewModel.State(),
+    setEvent: (HomeViewModel.Event) -> Unit = {},
+    effect: Flow<HomeViewModel.Effect> = emptyFlow(),
+    setEffect: (HomeViewModel.Effect) -> Unit = {},
 ) {
+    val context = LocalContext.current
+
+    LaunchedEffect({}) {
+        effect.collect {
+            Log.d("HomeScreen", "effect.collect($it)")
+            when (it) {
+                HomeViewModel.Effect.ShowToastTest -> {
+                    Toast.makeText(context, "Test", Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -85,7 +109,10 @@ fun _HomeScreen(
                 Text(text = "home")
             }
 
-            Button(onClick = onEventConnectMqttTest ) {
+            Button(onClick = {
+                setEvent(HomeViewModel.Event.ConnectMqttTest)
+                setEffect(HomeViewModel.Effect.ShowToastTest)
+            }) {
                 Text(text = "connect mqtt test")
             }
 
@@ -250,7 +277,7 @@ fun _HomeScreen(
 fun DefaultPreview() {
     QLeapTemiTheme(darkTheme = true) {
         Box {
-            _HomeScreen(HomeViewModel.State(), {}, {})
+            _HomeScreen()
         }
     }
 }

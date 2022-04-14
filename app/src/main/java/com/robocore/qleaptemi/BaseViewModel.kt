@@ -1,5 +1,6 @@
 package com.robocore.qleaptemi
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
@@ -41,6 +42,7 @@ abstract class BaseViewModel<State : UiState, Event : UiEvent, Effect : UiEffect
     val event = _event.asSharedFlow()
 
     fun setEvent(event: Event) {
+        Log.d(this.javaClass.canonicalName, "setEvent($event)")
         val newEvent = event
         viewModelScope.launch { _event.emit(newEvent) }
     }
@@ -50,8 +52,9 @@ abstract class BaseViewModel<State : UiState, Event : UiEvent, Effect : UiEffect
     private val _effect: Channel<Effect> = Channel()
     val effect = _effect.receiveAsFlow()
 
-    protected fun setEffect(builder: () -> Effect) {
+    fun setEffect(builder: () -> Effect) {
         val effectValue = builder()
+        Log.d(this.javaClass.canonicalName, "setEffect($effectValue)")
         viewModelScope.launch { _effect.send(effectValue) }
     }
 
@@ -67,6 +70,7 @@ abstract class BaseViewModel<State : UiState, Event : UiEvent, Effect : UiEffect
     private fun subscribeEvents() {
         viewModelScope.launch {
             event.collect {
+                Log.d(this.javaClass.canonicalName, "event.collect($it)")
                 handleEvent(it)
             }
         }

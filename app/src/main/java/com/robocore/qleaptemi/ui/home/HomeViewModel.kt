@@ -24,6 +24,7 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             mqttConnection.status.collect {
+                Log.d(TAG, "mqttConnection.status.collect")
                 setState { copy(mqttConnectionStatus = it) }
             }
         }
@@ -34,26 +35,15 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun handleEvent(event: Event) {
+        Log.d(TAG, "handleEvent($event)")
         when (event) {
             is Event.ConnectMqttTest -> {
-                viewModelScope.launch {
+                externalScope.launch {
                     mqttConnection.connect()
-                    Log.d(TAG, externalScope.toString())
                 }
             }
             is Event.StartOrStopQLeap -> {
-//                coroutineScope.launch {
-//                    _viewState.value = _viewState.value.copy(isLoading = true)
-//                    withContext(Dispatchers.IO) { answerService.save(uiAction.answer) }
-//                    val text = if (uiAction.answer == "Nacho cheese") {
-//                        "You've heard too many cheese jokes"
-//                    } else {
-//                        "Nacho cheese"
-//                    }
-//                    _viewState.value = _viewState.value.copy(textToDisplay = text)
-//                    _oneShotEvents.send(OneShotEvent.NavigateToResults)
-//                    _viewState.value = _viewState.value.copy(isLoading = false)
-//                }
+
             }
             is Event.OpenOrCloseSettings -> {
 
@@ -79,7 +69,7 @@ class HomeViewModel @Inject constructor(
 
     // Side effects
     sealed class Effect : UiEffect {
-        object ShowToast : Effect()
+        object ShowToastTest : Effect()
 
     }
 
