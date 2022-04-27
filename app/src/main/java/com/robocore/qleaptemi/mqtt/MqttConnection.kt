@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -93,7 +94,7 @@ class MqttConnection(private val context: Context) {
         if (client == null) {
             clientId = MqttClient.generateClientId()
             client = MqttAndroidClient(context, broker_url, clientId)
-            client?.setCallback(MqttCallbackHandler())
+            client?.setCallback(MqttCallbackHandler(context = context))
         }
     }
 
@@ -112,29 +113,132 @@ class MqttConnection(private val context: Context) {
 
         externalScope.launch {
             try {
-                if (client?.isConnected == false) {
-                    Log.d(TAG, "MqttClient - connect - mqttClient?.isConnected == false")
-                    client?.connect(mqttConnectOptions, null, object : IMqttActionListener {
-                        override fun onSuccess(asyncActionToken: IMqttToken?) {
-                            Log.d(TAG, "MqttClient - Connected")
+                Log.d("MqttClient", "connect - status.value: ${status.value}")
+                Log.d("MqttClient", "connect - isConnected: ${client?.isConnected}")
+                when (status.value) {
+                    ConnectionStatus.CONNECTING -> {}
+                    ConnectionStatus.CONNECTED -> {}
+                    ConnectionStatus.DISCONNECTING -> {}
+                    ConnectionStatus.DISCONNECTED, ConnectionStatus.ERROR, ConnectionStatus.NONE -> {
+                        client?.connect(mqttConnectOptions, null, object : IMqttActionListener {
+                            override fun onSuccess(asyncActionToken: IMqttToken?) {
+                                Log.d(TAG, "MqttClient - Connected")
 
-                            setStatus(ConnectionStatus.CONNECTED)
-                        }
+                                setStatus(ConnectionStatus.CONNECTED)
+                            }
 
-                        override fun onFailure(
-                            asyncActionToken: IMqttToken?,
-                            exception: Throwable?
-                        ) {
-                            Log.d(TAG, "MqttClient - Failed to connect - $exception")
+                            override fun onFailure(
+                                asyncActionToken: IMqttToken?,
+                                exception: Throwable?
+                            ) {
+                                Log.e(TAG, "MqttClient - Failed to connect - $exception")
 
-                            setStatus(ConnectionStatus.ERROR)
-                        }
-                    })
+                                setStatus(ConnectionStatus.ERROR)
+                            }
+                        })
+
+                        setStatus(ConnectionStatus.CONNECTING)
+                    }
                 }
             } catch (e: MqttException) {
                 e.printStackTrace()
             }
         }   // end coroutine
+    }
+
+    fun disconnect() {
+        val externalScope = hiltEntryPoint.externalScope()
+
+        externalScope.launch {
+            try {
+                Log.d("MqttClient", "disconnect - status.value: ${status.value}")
+                Log.d("MqttClient", "disconnect - isConnected: ${client?.isConnected}")
+                when (status.value) {
+                    ConnectionStatus.CONNECTING -> {}
+                    ConnectionStatus.DISCONNECTING -> {}
+                    ConnectionStatus.DISCONNECTED -> {}
+                    ConnectionStatus.CONNECTED, ConnectionStatus.ERROR, ConnectionStatus.NONE -> {
+                        client?.disconnect(null, object : IMqttActionListener {
+                            override fun onSuccess(asyncActionToken: IMqttToken?) {
+                                Log.d(TAG, "MqttClient - Disconnected")
+                                setStatus(ConnectionStatus.DISCONNECTED)
+                            }
+
+                            override fun onFailure(
+                                asyncActionToken: IMqttToken?,
+                                exception: Throwable?
+                            ) {
+                                Log.e(TAG, "MqttClient - Failed to disconnect")
+                                setStatus(ConnectionStatus.ERROR)
+                            }
+                        })
+
+                        setStatus(ConnectionStatus.DISCONNECTING)
+                    }
+                }
+            } catch (e: MqttException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun reconnect() {
+        val externalScope = hiltEntryPoint.externalScope()
+
+        externalScope.launch {
+            try {
+                Log.d("MqttClient", "reconnect - status.value: ${status.value}")
+                Log.d("MqttClient", "reconnect - isConnected: ${client?.isConnected}")
+                when (status.value) {
+                    ConnectionStatus.CONNECTING -> {}
+                    ConnectionStatus.CONNECTED -> {}
+                    ConnectionStatus.DISCONNECTING -> {}
+                    ConnectionStatus.DISCONNECTED -> {
+                        /** Even if connectionLost was called, mqtt client may not be connected
+                         * (e.g. connectionLost due to wifi disconnected) since "Client is connected (32100)"
+                         * will be thrown. */
+                        if (client?.isConnected == true) {
+                            client?.disconnect(null, object : IMqttActionListener {
+                                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                                    Log.d(TAG, "MqttClient - Disconnected")
+                                    setStatus(ConnectionStatus.DISCONNECTED)
+                                    connect()
+                                }
+
+                                override fun onFailure(
+                                    asyncActionToken: IMqttToken?,
+                                    exception: Throwable?
+                                ) {
+                                    Log.e(TAG, "MqttClient - Failed to disconnect")
+                                    setStatus(ConnectionStatus.ERROR)
+                                }
+                            })
+                            setStatus(ConnectionStatus.DISCONNECTING)
+                        }
+                    }
+                    ConnectionStatus.ERROR, ConnectionStatus.NONE -> {
+                        client?.disconnect(null, object : IMqttActionListener {
+                            override fun onSuccess(asyncActionToken: IMqttToken?) {
+                                Log.d(TAG, "MqttClient - Disconnected")
+                                setStatus(ConnectionStatus.DISCONNECTED)
+                                connect()
+                            }
+
+                            override fun onFailure(
+                                asyncActionToken: IMqttToken?,
+                                exception: Throwable?
+                            ) {
+                                Log.e(TAG, "MqttClient - Failed to disconnect")
+                                setStatus(ConnectionStatus.ERROR)
+                            }
+                        })
+                        setStatus(ConnectionStatus.DISCONNECTING)
+                    }
+                }
+            } catch (e: MqttException) {
+                e.printStackTrace()
+            }
+        }
     }
 
     companion object {

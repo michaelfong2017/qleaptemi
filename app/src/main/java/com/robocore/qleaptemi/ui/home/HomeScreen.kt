@@ -23,6 +23,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.robocore.qleaptemi.MainScreen
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import com.robocore.qleaptemi.ui.theme.QLeapTemiTheme
+import com.robocore.qleaptemi.wifistatus.WifiConnectionStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emptyFlow
@@ -79,9 +80,7 @@ fun _HomeScreen(
         Column(
             modifier = Modifier.fillMaxWidth(0.25f)
         ) {
-//            Spacer(modifier = Modifier.scale(1f, 0.75f))
-
-            Spacer(modifier = Modifier.fillMaxHeight(0.73f))
+//            Spacer(modifier = Modifier.fillMaxHeight(0.73f))
             Text(
                 text = "Temi狀態",
                 fontWeight = FontWeight.Bold,
@@ -105,28 +104,32 @@ fun _HomeScreen(
                 modifier = Modifier.padding(4.dp)
             )
 
-            Button(onClick = navigateTo) {
-                Text(text = "home")
-            }
-
+//            Button(onClick = navigateTo) {
+//                Text(text = "home")
+//            }
+//
             Button(onClick = {
                 setEvent(HomeViewModel.Event.ConnectMqttTest)
                 setEffect(HomeViewModel.Effect.ShowToastTest)
             }) {
-                Text(text = "connect mqtt test")
+                Text(text = "connect/disconnect/reconnect mqtt test")
             }
 
-        }
-    }
 
-
-//            Text(
-//                if (uiState.wifiStatus) "WiFi連接: 已連接" else "WiFi連接: 已斷開",
-//                fontSize = 24.sp,
-//                color = Color.White,
-//                textAlign = TextAlign.End,
-//                modifier = Modifier.padding(4.dp)
-//            )
+            Text(
+                when (uiState.wifiStatus) {
+                    WifiConnectionStatus.CONNECTED -> "WiFi連接: 已連接"
+                    WifiConnectionStatus.DISCONNECTED -> "WiFi連接: 已斷開"
+                    WifiConnectionStatus.CONNECTING -> "CONNECTING"
+                    WifiConnectionStatus.DISCONNECTING -> "DISCONNECTING"
+                    WifiConnectionStatus.ERROR -> "ERROR"
+                    WifiConnectionStatus.NONE -> "NONE"
+                },
+                fontSize = 24.sp,
+                color = Color.White,
+                textAlign = TextAlign.End,
+                modifier = Modifier.padding(4.dp)
+            )
 //            Text(
 //                text = "音量: ${uiState.volume}",
 //                fontSize = 24.sp,
@@ -134,9 +137,11 @@ fun _HomeScreen(
 //                textAlign = TextAlign.End,
 //                modifier = Modifier.padding(4.dp)
 //            )
-//
-//        }
-//
+
+        }
+
+    }
+
 //        Column(
 //            modifier = Modifier.fillMaxWidth(0.64f),
 //            verticalArrangement = Arrangement.Center,

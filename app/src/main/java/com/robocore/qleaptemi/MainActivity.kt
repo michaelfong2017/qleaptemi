@@ -1,7 +1,9 @@
 package com.robocore.qleaptemi
 
 import android.Manifest
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -14,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import com.robocore.qleaptemi.ui.theme.QLeapTemiTheme
+import com.robocore.qleaptemi.wifistatus.WifiStatusReceiver
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -21,6 +24,8 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var mqttConnection: MqttConnection
+    @Inject
+    lateinit var broadcastReceiver: WifiStatusReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +61,12 @@ class MainActivity : ComponentActivity() {
         Log.d("MainActivity", "onAllPermissionsGranted")
         mqttConnection.isConnected()
         Log.d("MainActivity", mqttConnection.toString())
+
+        /** Init and register broadcast receivers */
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+        registerReceiver(broadcastReceiver, intentFilter)
+        /** Init and register broadcast receivers END */
     }
 
     override fun onRequestPermissionsResult(
