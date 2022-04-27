@@ -23,8 +23,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
-    lateinit var mqttConnection: MqttConnection
-    @Inject
     lateinit var broadcastReceiver: WifiStatusReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,8 +57,6 @@ class MainActivity : ComponentActivity() {
 
     private fun onAllPermissionsGranted() {
         Log.d("MainActivity", "onAllPermissionsGranted")
-        mqttConnection.isConnected()
-        Log.d("MainActivity", mqttConnection.toString())
 
         /** Init and register broadcast receivers */
         val intentFilter = IntentFilter()

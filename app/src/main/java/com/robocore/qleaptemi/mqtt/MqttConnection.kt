@@ -158,22 +158,24 @@ class MqttConnection(private val context: Context) {
                     ConnectionStatus.DISCONNECTING -> {}
                     ConnectionStatus.DISCONNECTED -> {}
                     ConnectionStatus.CONNECTED, ConnectionStatus.ERROR, ConnectionStatus.NONE -> {
-                        client?.disconnect(null, object : IMqttActionListener {
-                            override fun onSuccess(asyncActionToken: IMqttToken?) {
-                                Log.d(TAG, "MqttClient - Disconnected")
-                                setStatus(ConnectionStatus.DISCONNECTED)
-                            }
+                        if (client?.isConnected == true) {
+                            client?.disconnect(null, object : IMqttActionListener {
+                                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                                    Log.d(TAG, "MqttClient - Disconnected")
+                                    setStatus(ConnectionStatus.DISCONNECTED)
+                                }
 
-                            override fun onFailure(
-                                asyncActionToken: IMqttToken?,
-                                exception: Throwable?
-                            ) {
-                                Log.e(TAG, "MqttClient - Failed to disconnect")
-                                setStatus(ConnectionStatus.ERROR)
-                            }
-                        })
+                                override fun onFailure(
+                                    asyncActionToken: IMqttToken?,
+                                    exception: Throwable?
+                                ) {
+                                    Log.e(TAG, "MqttClient - Failed to disconnect")
+                                    setStatus(ConnectionStatus.ERROR)
+                                }
+                            })
 
-                        setStatus(ConnectionStatus.DISCONNECTING)
+                            setStatus(ConnectionStatus.DISCONNECTING)
+                        }
                     }
                 }
             } catch (e: MqttException) {
@@ -193,10 +195,10 @@ class MqttConnection(private val context: Context) {
                     ConnectionStatus.CONNECTING -> {}
                     ConnectionStatus.CONNECTED -> {}
                     ConnectionStatus.DISCONNECTING -> {}
+                    /** Even if connectionLost was called (client should be disconnected),
+                     * mqtt client may not be connected (e.g. connectionLost due to wifi disconnected)
+                     * since "Client is connected (32100)" will be thrown. */
                     ConnectionStatus.DISCONNECTED -> {
-                        /** Even if connectionLost was called, mqtt client may not be connected
-                         * (e.g. connectionLost due to wifi disconnected) since "Client is connected (32100)"
-                         * will be thrown. */
                         if (client?.isConnected == true) {
                             client?.disconnect(null, object : IMqttActionListener {
                                 override fun onSuccess(asyncActionToken: IMqttToken?) {
@@ -213,26 +215,36 @@ class MqttConnection(private val context: Context) {
                                     setStatus(ConnectionStatus.ERROR)
                                 }
                             })
+
                             setStatus(ConnectionStatus.DISCONNECTING)
+                        }
+                        else {
+                            connect()
                         }
                     }
                     ConnectionStatus.ERROR, ConnectionStatus.NONE -> {
-                        client?.disconnect(null, object : IMqttActionListener {
-                            override fun onSuccess(asyncActionToken: IMqttToken?) {
-                                Log.d(TAG, "MqttClient - Disconnected")
-                                setStatus(ConnectionStatus.DISCONNECTED)
-                                connect()
-                            }
+                        if (client?.isConnected == true) {
+                            client?.disconnect(null, object : IMqttActionListener {
+                                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                                    Log.d(TAG, "MqttClient - Disconnected")
+                                    setStatus(ConnectionStatus.DISCONNECTED)
+                                    connect()
+                                }
 
-                            override fun onFailure(
-                                asyncActionToken: IMqttToken?,
-                                exception: Throwable?
-                            ) {
-                                Log.e(TAG, "MqttClient - Failed to disconnect")
-                                setStatus(ConnectionStatus.ERROR)
-                            }
-                        })
-                        setStatus(ConnectionStatus.DISCONNECTING)
+                                override fun onFailure(
+                                    asyncActionToken: IMqttToken?,
+                                    exception: Throwable?
+                                ) {
+                                    Log.e(TAG, "MqttClient - Failed to disconnect")
+                                    setStatus(ConnectionStatus.ERROR)
+                                }
+                            })
+
+                            setStatus(ConnectionStatus.DISCONNECTING)
+                        }
+                        else {
+                            connect()
+                        }
                     }
                 }
             } catch (e: MqttException) {

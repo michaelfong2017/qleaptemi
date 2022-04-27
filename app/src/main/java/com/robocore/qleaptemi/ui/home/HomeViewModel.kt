@@ -58,7 +58,7 @@ class HomeViewModel @Inject constructor(
                 externalScope.launch {
                     when (i) {
                         0 -> {
-                            mqttConnection.connect()
+                            mqttConnection.reconnect()
                             i++
                         }
                         1 -> {
