@@ -26,6 +26,6 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideWifiStatusReceiver(): WifiStatusReceiver =
-        WifiStatusReceiver()
+    fun provideWifiStatusReceiver(@ApplicationContext context: Context): WifiStatusReceiver =
+        WifiStatusReceiver(context = context)
 }
