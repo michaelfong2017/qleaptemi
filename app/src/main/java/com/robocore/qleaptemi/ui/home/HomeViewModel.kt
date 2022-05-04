@@ -1,24 +1,18 @@
 package com.robocore.qleaptemi.ui.home
 
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.util.Log
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.robocore.qleaptemi.BaseViewModel
 import com.robocore.qleaptemi.UiEffect
 import com.robocore.qleaptemi.UiEvent
 import com.robocore.qleaptemi.UiState
+import com.robocore.qleaptemi.audio.SoundManager
 import com.robocore.qleaptemi.inject.MqttCoroutineScope
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import com.robocore.qleaptemi.wifistatus.WifiConnectionStatus
 import com.robocore.qleaptemi.wifistatus.WifiStatusReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,6 +21,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val mqttConnection: MqttConnection,
     private val wifiStatusReceiver: WifiStatusReceiver,
+    private val soundManager: SoundManager,
     @MqttCoroutineScope private val externalScope: CoroutineScope
 ) :
     BaseViewModel<HomeViewModel.State, HomeViewModel.Event, HomeViewModel.Effect>() {
@@ -42,6 +37,12 @@ class HomeViewModel @Inject constructor(
             wifiStatusReceiver.status.collect {
                 Log.d(TAG, "wifiStatusReceiver.status.collect")
                 setState { copy(wifiStatus = it) }
+            }
+        }
+        viewModelScope.launch {
+            soundManager.volume.collect {
+                Log.d(TAG, "soundManager.volume.collect")
+                setState { copy(volume = it) }
             }
         }
     }
@@ -90,6 +91,7 @@ class HomeViewModel @Inject constructor(
     data class State(
         val mqttConnectionStatus: MqttConnection.ConnectionStatus = MqttConnection.ConnectionStatus.NONE,
         val wifiStatus: WifiConnectionStatus = WifiConnectionStatus.NONE,
+        val volume: Int = 0,
     ) : UiState
 
     // Events that user performed

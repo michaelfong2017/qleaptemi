@@ -3,6 +3,7 @@ package com.robocore.qleaptemi
 import android.Manifest
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.robocore.qleaptemi.audio.VolumeReceiver
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import com.robocore.qleaptemi.ui.theme.QLeapTemiTheme
 import com.robocore.qleaptemi.wifistatus.WifiStatusReceiver
@@ -24,6 +26,8 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var broadcastReceiver: WifiStatusReceiver
+    @Inject
+    lateinit var volumeReceiver: VolumeReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,9 +63,12 @@ class MainActivity : ComponentActivity() {
         Log.d("MainActivity", "onAllPermissionsGranted")
 
         /** Init and register broadcast receivers */
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
-        registerReceiver(broadcastReceiver, intentFilter)
+        val wifiStatusIntentFilter = IntentFilter()
+        wifiStatusIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+        registerReceiver(broadcastReceiver, wifiStatusIntentFilter)
+        val volumeIntentFilter = IntentFilter()
+        volumeIntentFilter.addAction("android.media.VOLUME_CHANGED_ACTION")
+        registerReceiver(volumeReceiver, volumeIntentFilter)
         /** Init and register broadcast receivers END */
     }
 

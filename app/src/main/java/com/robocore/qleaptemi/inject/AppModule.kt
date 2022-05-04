@@ -1,8 +1,11 @@
 package com.robocore.qleaptemi.inject
 
 import android.content.Context
+import com.robocore.qleaptemi.audio.SoundManager
+import com.robocore.qleaptemi.audio.VolumeReceiver
 import com.robocore.qleaptemi.mqtt.MqttCallbackHandler
 import com.robocore.qleaptemi.mqtt.MqttConnection
+import com.robocore.qleaptemi.settings.SettingsStore
 import com.robocore.qleaptemi.wifistatus.WifiStatusReceiver
 import dagger.Module
 import dagger.Provides
@@ -28,4 +31,19 @@ object AppModule {
     @Provides
     fun provideWifiStatusReceiver(@ApplicationContext context: Context): WifiStatusReceiver =
         WifiStatusReceiver(context = context)
+
+    @Singleton
+    @Provides
+    fun provideVolumeReceiver(@ApplicationContext context: Context): VolumeReceiver =
+        VolumeReceiver(context = context)
+
+    @Singleton
+    @Provides
+    fun provideSoundManager(@ApplicationContext context: Context): SoundManager =
+        SoundManager(context = context)
+
+    @Singleton
+    @Provides
+    fun provideSettingsStore(@ApplicationContext context: Context): SettingsStore =
+        SettingsStore(context = context)
 }

@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.NetworkInfo
 import android.net.wifi.WifiManager
 import android.util.Log
-import com.robocore.qleaptemi.inject.MqttCoroutineScope
 import com.robocore.qleaptemi.mqtt.MqttConnection
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn

@@ -116,15 +116,21 @@ dependencies {
     /** Navigation */
     def nav_version = "2.4.2"
     implementation "androidx.navigation:navigation-compose:$nav_version"
+    /***/
 
     /** Hilt */
     implementation "com.google.dagger:hilt-android:2.38.1"
     kapt "com.google.dagger:hilt-compiler:2.38.1"
     implementation "androidx.hilt:hilt-navigation-compose:1.0.0"
+    /***/
 
     /** mqtt client */
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
     implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    /***/
+
+    /** Preferences DataStore */
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
     /***/
 }
